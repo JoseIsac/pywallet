@@ -3,11 +3,21 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if (Get-Variable -Name PSNativeCommandUseErrorActionPreference -ErrorAction SilentlyContinue) {
+  $PSNativeCommandUseErrorActionPreference = $false
+}
 
 Write-Host "=== Building pywallet Windows portable executable ==="
 
 & $PythonExe -m pip install --upgrade pip
-& $PythonExe -m pip install pyinstaller bsddb3 ecdsa pycryptodome simplejson
+& $PythonExe -m pip install pyinstaller ecdsa pycryptodome simplejson
+
+# bsddb3 build can fail on Windows runners due missing Berkeley DB toolchain.
+# pywallet already supports optional import fallback when this module is unavailable.
+& $PythonExe -m pip install bsddb3
+if ($LASTEXITCODE -ne 0) {
+  Write-Warning "bsddb3 could not be installed on this runner. Continuing with optional fallback."
+}
 
 Remove-Item -Recurse -Force build, dist -ErrorAction SilentlyContinue
 
@@ -18,7 +28,6 @@ $pyInstallerArgs = @(
   "--onefile",
   "--console",
   "--name", "pywallet",
-  "--hidden-import", "bsddb3",
   "--hidden-import", "ecdsa",
   "--hidden-import", "Crypto",
   "--hidden-import", "simplejson",
