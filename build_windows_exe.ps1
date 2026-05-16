@@ -1,8 +1,8 @@
-$ErrorActionPreference = "Stop"
-
 param(
     [string]$PythonExe = "python"
 )
+
+$ErrorActionPreference = "Stop"
 
 Write-Host "=== Building pywallet Windows portable executable ==="
 
@@ -11,17 +11,21 @@ Write-Host "=== Building pywallet Windows portable executable ==="
 
 Remove-Item -Recurse -Force build, dist -ErrorAction SilentlyContinue
 
-& $PythonExe -m PyInstaller \
-    --noconfirm \
-    --clean \
-    --onefile \
-    --console \
-    --name pywallet \
-    --hidden-import bsddb3 \
-    --hidden-import ecdsa \
-    --hidden-import Crypto \
-    --hidden-import simplejson \
-    pywallet.py
+$pyInstallerArgs = @(
+  "-m", "PyInstaller",
+  "--noconfirm",
+  "--clean",
+  "--onefile",
+  "--console",
+  "--name", "pywallet",
+  "--hidden-import", "bsddb3",
+  "--hidden-import", "ecdsa",
+  "--hidden-import", "Crypto",
+  "--hidden-import", "simplejson",
+  "pywallet.py"
+)
+
+& $PythonExe @pyInstallerArgs
 
 $packageDir = "dist\pywallet-windows-portable"
 New-Item -ItemType Directory -Force -Path $packageDir | Out-Null
