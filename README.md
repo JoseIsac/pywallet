@@ -50,6 +50,70 @@ chmod +x install.sh
 ./install.sh
 ```
 
+### Windows (TUI Mode)
+
+This repository now includes a Windows launcher with guided terminal prompts.
+
+```bat
+run_pywallet.bat
+```
+
+By default, this opens the interactive TUI mode (`--tui`) and asks for:
+- wallet/device path
+- output keys file
+- optional recovery size
+- optional recovered wallet directory
+
+You can still pass any original pywallet arguments directly:
+
+```bat
+run_pywallet.bat --recover --recov_device=C:\path\to\wallet.dat --output_keys=recovered_keys.txt
+```
+
+### Windows + WSL (Recommended)
+
+If `run_pywallet.bat` opens and closes quickly, use WSL mode. This repository includes ready-to-use launchers:
+
+```bat
+setup_wsl.bat
+run_pywallet_wsl.bat
+```
+
+What they do:
+- `setup_wsl.bat`: runs `install.sh` inside WSL and installs all required Linux dependencies (`libdb-dev`, `python3-venv`, build tools, crypto libs) plus Python packages including `bsddb3`.
+- `run_pywallet_wsl.bat`: starts pywallet inside WSL and opens TUI mode by default (`--tui`).
+
+Optional: pass normal pywallet arguments through WSL launcher:
+
+```bat
+run_pywallet_wsl.bat --recover --recov_device=/mnt/c/path/wallet.dat --output_keys=recovered_keys.txt
+```
+
+### Windows Standalone Build (No Python, No WSL)
+
+You can distribute pywallet as a standalone `.exe` for Windows machines that do not have Python or WSL installed.
+
+This repository now includes:
+- `build_windows_exe.ps1` (build script using PyInstaller)
+- `.github/workflows/build-windows-exe.yml` (GitHub Actions pipeline)
+
+#### Option A: Build in GitHub Actions
+1. Push the repository to GitHub.
+2. Run workflow: **Build Windows Portable EXE**.
+3. Download artifact: `pywallet-windows-portable`.
+4. On target PC, run `run_pywallet_portable.bat` (or `pywallet.exe`).
+
+#### Option B: Build locally on a Windows machine with Python (builder machine only)
+```powershell
+powershell -ExecutionPolicy Bypass -File .\build_windows_exe.ps1
+```
+
+Generated portable folder:
+- `dist\pywallet-windows-portable\pywallet.exe`
+- `dist\pywallet-windows-portable\run_pywallet_portable.bat`
+
+You can copy that folder to any Windows PC and run it directly, with no Python/WSL installation required.
+
 ### Manual Setup (Ubuntu 24.04+)
 ```bash
 # Install system dependencies (Ubuntu/Debian)

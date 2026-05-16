@@ -7341,6 +7341,81 @@ class TestPywallet(unittest.TestCase):
         pass
 
 
+def _tui_prompt_text(prompt, default=None, allow_empty=False):
+    while True:
+        if default is None:
+            value = input(prompt).strip()
+        else:
+            value = input(f"{prompt} [{default}]: ").strip()
+            if value == '':
+                value = default
+
+        if value or allow_empty:
+            return value
+
+        print("This field cannot be empty.")
+
+
+def _tui_yes_no(prompt, default=True):
+    suffix = "Y/n" if default else "y/N"
+    raw = input(f"{prompt} ({suffix}): ").strip().lower()
+    if raw == '':
+        return default
+    return raw in ['y', 'yes']
+
+
+def configure_tui_recovery(options):
+    print("\n" + "=" * 60)
+    print("PYWALLET TUI - WINDOWS RECOVERY")
+    print("=" * 60)
+    print("This mode helps you run recovery with guided prompts.")
+    print("Press Ctrl+C at any step to cancel.\n")
+
+    try:
+        device = _tui_prompt_text("Wallet file/device path")
+
+        default_output = generate_recovery_filename("recovered_keys")
+        output_keys = _tui_prompt_text("Output text file for recovered keys", default=default_output)
+
+        recov_size = _tui_prompt_text(
+            "Recovery size (optional, e.g. 100MB). Leave blank for auto when using file",
+            allow_empty=True
+        )
+
+        use_output_dir = _tui_yes_no("Also create recovered wallet directory", default=False)
+        recov_outputdir = None
+        if use_output_dir:
+            recov_outputdir = _tui_prompt_text("Output directory for recovered wallet")
+
+        print("\nSummary:")
+        print(f"  recover mode: enabled")
+        print(f"  recov_device: {device}")
+        print(f"  output_keys: {output_keys}")
+        if recov_size:
+            print(f"  recov_size: {recov_size}")
+        else:
+            print("  recov_size: auto (for files)")
+        if recov_outputdir:
+            print(f"  recov_outputdir: {recov_outputdir}")
+
+        if not _tui_yes_no("Start recovery now", default=True):
+            print("Cancelled by user.")
+            return False
+
+        options.recover = True
+        options.recov_device = device
+        options.output_keys = output_keys
+        if recov_size:
+            options.recov_size = recov_size
+        if recov_outputdir:
+            options.recov_outputdir = recov_outputdir
+
+        return True
+    except KeyboardInterrupt:
+        print("\nCancelled by user.")
+        return False
+
+
 if __name__ == '__main__':
     # Print version information at startup
     print(f"Pywallet {pywversion} - https://pywallet.org")
@@ -7481,11 +7556,21 @@ if __name__ == '__main__':
     parser.add_option("--targeted_output", dest="targeted_output",
                       help="output file for targeted extraction (default: output_file.txt)")
 
+    parser.add_option("--tui", dest="tui", action="store_true",
+                      help="launch interactive terminal UI (Windows-friendly guided recovery mode)")
+
     #	parser.add_option("--forcerun", dest="forcerun",
     #		action="store_true",
     #		help="run even if pywallet detects bitcoin is running")
 
     (options, args) = parser.parse_args()
+
+    if options.tui:
+        if not sys.stdin.isatty():
+            print("ERROR: --tui requires an interactive terminal")
+            exit(1)
+        if not configure_tui_recovery(options):
+            exit(0)
 
     #	a=Popen("ps xa | grep ' bitcoin'", shell=True, bufsize=-1, stdout=PIPE).stdout
     #	aread=a.read()
