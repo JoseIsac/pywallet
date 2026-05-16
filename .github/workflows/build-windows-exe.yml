@@ -19,11 +19,28 @@ jobs:
           python-version: "3.11"
 
       - name: Build portable EXE
+        id: build
+        continue-on-error: true
         shell: pwsh
-        run: ./build_windows_exe.ps1 -PythonExe python
+        run: |
+          ./build_windows_exe.ps1 -PythonExe python *>&1 | Tee-Object -FilePath build-windows.log
 
       - name: Upload artifact
+        if: steps.build.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: pywallet-windows-portable
           path: dist/pywallet-windows-portable
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pywallet-windows-build-log
+          path: build-windows.log
+
+      - name: Fail when build failed
+        if: steps.build.outcome != 'success'
+        shell: pwsh
+        run: |
+          Write-Error "Build portable EXE step failed. Download artifact 'pywallet-windows-build-log' for full error details."
